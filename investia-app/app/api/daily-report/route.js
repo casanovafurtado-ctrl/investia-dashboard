@@ -16,7 +16,7 @@ export async function GET(request) {
 
   try {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const aiResponse = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
