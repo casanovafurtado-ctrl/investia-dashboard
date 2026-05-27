@@ -323,15 +323,17 @@ export default function Dashboard() {
   }, [loadMarket]);
 
   // ── Merge market data with base data ─────────────────────────────────────────
-  const acoesWithPrice = ACOES_BASE.map(a => {
-    const live = marketData?.acoes?.find(m => m.ticker === a.ticker);
-    return { ...a, preco: live?.preco || '--', variacao: live?.variacao || '--', positivo: live?.positivo };
-  });
+  const acoesWithPrice = (ACOES_BASE || []).map(a => {
+    if (!a) return null;
+    const live = marketData?.acoes?.find(m => m && m.ticker === a.ticker);
+    return { ...a, preco: live?.preco ?? '--', variacao: live?.variacao ?? '--', positivo: live?.positivo ?? null };
+  }).filter(Boolean);
 
-  const fiisWithPrice = FIIS_BASE.map(f => {
-    const live = marketData?.fiis?.find(m => m.ticker === f.ticker);
-    return { ...f, preco: live?.preco || '--', variacao: live?.variacao || '--', positivo: live?.positivo };
-  });
+  const fiisWithPrice = (FIIS_BASE || []).map(f => {
+    if (!f) return null;
+    const live = marketData?.fiis?.find(m => m && m.ticker === f.ticker);
+    return { ...f, preco: live?.preco ?? '--', variacao: live?.variacao ?? '--', positivo: live?.positivo ?? null };
+  }).filter(Boolean);
 
   // ── Carteira real ────────────────────────────────────────────────────────────
   const adicionarAtivo = () => {
