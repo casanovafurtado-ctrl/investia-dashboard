@@ -578,6 +578,10 @@ export default function Dashboard() {
     </div>
   );
 
+  // Safety: ensure arrays are always valid before render
+  const safeAcoes = Array.isArray(acoesWithPrice) ? acoesWithPrice.filter(Boolean) : [];
+  const safeFiis  = Array.isArray(fiisWithPrice)  ? fiisWithPrice.filter(Boolean)  : [];
+
   return (
     <div style={{ minHeight:'100vh', background:'#F8FAFC' }}>
       <div style={{ maxWidth:1024, margin:'0 auto', padding:'20px 16px 80px' }}>
@@ -640,8 +644,8 @@ export default function Dashboard() {
             aporte={aporte}
             marketData={marketData}
             marketLoading={marketLoading}
-            acoesWithPrice={acoesWithPrice}
-            fiisWithPrice={fiisWithPrice}
+            acoesWithPrice={safeAcoes}
+            fiisWithPrice={safeFiis}
             carteiraReal={carteiraReal}
             runAI={runAI}
             today={today}
@@ -767,7 +771,7 @@ export default function Dashboard() {
                   ))}
                 </tr></thead>
                 <tbody>
-                  {acoesWithPrice.map(a => (
+                  {safeAcoes.map(a => (
                     <tr key={a.ticker} style={{ borderBottom:'1px solid #F1F5F9' }}>
                       <td style={{ padding:'10px 12px', fontFamily:'monospace', fontWeight:700, color:'#2563EB' }}>{a.ticker}</td>
                       <td style={{ padding:'10px 12px', fontWeight:500 }}>{a.empresa}</td>
@@ -805,7 +809,7 @@ export default function Dashboard() {
                   ))}
                 </tr></thead>
                 <tbody>
-                  {fiisWithPrice.map(f => (
+                  {safeFiis.map(f => (
                     <tr key={f.ticker} style={{ borderBottom:'1px solid #F1F5F9' }}>
                       <td style={{ padding:'10px 12px', fontFamily:'monospace', fontWeight:700, color:'#059669' }}>{f.ticker}</td>
                       <td style={{ padding:'10px 12px', fontWeight:500 }}>{f.nome}</td>
