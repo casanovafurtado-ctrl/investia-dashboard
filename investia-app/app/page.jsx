@@ -2,8 +2,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  BarChart, Bar,
 } from 'recharts';
 
 // ─── Static reference data ────────────────────────────────────────────────────
@@ -28,14 +26,6 @@ const ALLOC_PROFILES = {
   ],
 };
 
-const PERF_DATA = [
-  { m:'Mai', p:100, i:100 }, { m:'Jun', p:102, i:99 },
-  { m:'Jul', p:105, i:103 }, { m:'Ago', p:101, i:97 },
-  { m:'Set', p:108, i:104 }, { m:'Out', p:112, i:107 },
-  { m:'Nov', p:110, i:103 }, { m:'Dez', p:116, i:109 },
-  { m:'Jan', p:119, i:112 }, { m:'Fev', p:115, i:106 },
-  { m:'Mar', p:122, i:110 }, { m:'Abr', p:128, i:114 },
-];
 
 const ACOES_BASE = [
   { ticker:'PETR4', empresa:'Petrobras',       setor:'Energia',    pl:'5,1x', rec:'buy'  },
