@@ -438,15 +438,17 @@ export default function Dashboard() {
           pdf.addPage();
           // Mini header on continuation pages
           pdf.setFillColor(37, 99, 235); // #2563EB
-          pdf.roundedRect(marginX, 12, pageW - marginX*2, 34, 4, 4, 'F');
-          pdf.setTextColor(255,255,255);
-          pdf.setFont('helvetica','bold');
-          pdf.setFontSize(13);
-          pdf.text('◆ InvestIA Dashboard', marginX + 10, 34);
-          pdf.setFont('helvetica','normal');
+          pdf.rect(0, 0, pageW, 44, 'F');
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(15);
+          pdf.text('InvestIA', marginX, 28);
+          pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(10);
-          pdf.text(today(), pageW - marginX - 10, 34, { align:'right' });
-          pdf.setTextColor(0,0,0);
+          pdf.text('Dashboard de Mercado Financeiro', marginX + 72, 28);
+          pdf.setFontSize(10);
+          pdf.text(today(), pageW - marginX, 28, { align: 'right' });
+          pdf.setTextColor(0, 0, 0);
         }
 
         const availH    = pageNum === 0 ? firstPageH : contPageH;
