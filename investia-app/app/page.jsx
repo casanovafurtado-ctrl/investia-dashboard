@@ -99,17 +99,23 @@ function OverviewTab({ allocData, profile, profileLabels, aporte, marketData, ma
 
   // Carteira resumo
   let totalCusto = 0, totalAtual = 0, carteiraOk = false;
-  carteiraReal.forEach(ativo => {
-    const calc = calcCarteiraAtivo(ativo);
-    totalCusto += Number(ativo.qtd) * Number(ativo.precoMedio);
-    const live = marketData?.acoes?.find(m => m.ticker === ativo.ticker) || marketData?.fiis?.find(m => m.ticker === ativo.ticker);
-    if (live?.raw?.regularMarketPrice) { totalAtual += Number(ativo.qtd) * live.raw.regularMarketPrice; carteiraOk = true; }
-  });
+  if (carteiraReal && Array.isArray(carteiraReal)) {
+    carteiraReal.forEach(ativo => {
+      if (!ativo || !ativo.ticker) return;
+      totalCusto += Number(ativo.qtd || 0) * Number(ativo.precoMedio || 0);
+      const live = marketData?.acoes?.find(m => m.ticker === ativo.ticker)
+                || marketData?.fiis?.find(m => m.ticker === ativo.ticker);
+      if (live?.raw?.regularMarketPrice) {
+        totalAtual += Number(ativo.qtd) * live.raw.regularMarketPrice;
+        carteiraOk = true;
+      }
+    });
+  }
   const totalRes = totalAtual - totalCusto;
   const totalPct = totalCusto > 0 ? (totalRes / totalCusto) * 100 : 0;
 
   // Top movers from real data
-  const allAtivos = [...acoesWithPrice, ...fiisWithPrice].filter(a => a.variacao !== '--' && a.positivo !== null);
+  const allAtivos = [...(acoesWithPrice||[]), ...(fiisWithPrice||[])].filter(a => a && a.variacao !== '--' && a.positivo !== null);
   const topAlta  = [...allAtivos].filter(a => a.positivo).sort((a,b) => parseFloat(b.variacao) - parseFloat(a.variacao)).slice(0,3);
   const topBaixa = [...allAtivos].filter(a => !a.positivo).sort((a,b) => parseFloat(a.variacao) - parseFloat(b.variacao)).slice(0,3);
 
@@ -223,7 +229,7 @@ function OverviewTab({ allocData, profile, profileLabels, aporte, marketData, ma
         <button onClick={() => runAI('rec')} style={{ fontSize:12, padding:'6px 14px', borderRadius:8, border:'1px solid #E2E8F0', background:'white', color:'#374151', cursor:'pointer' }}>Analise completa ↗</button>
       </div>
       {['PETR4','ITUB4','MXRF11','HGLG11','IVVB11','MGLU3'].map(ticker => {
-        const ativo = [...acoesWithPrice, ...fiisWithPrice].find(a => a.ticker === ticker);
+        const ativo = [...(acoesWithPrice||[]), ...(fiisWithPrice||[])].find(a => a && a.ticker === ticker);
         const rec = ticker === 'MGLU3' ? 'sell' : ticker === 'IVVB11' ? 'buy' : ativo?.rec || 'hold';
         const desc = {
           PETR4: 'Petrobras - dividendos elevados, exposicao ao petroleo',
