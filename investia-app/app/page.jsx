@@ -104,6 +104,168 @@ const buildPrompt = (type, profile, aporte, d, carteiraReal) => {
   return prompts[type] || type;
 };
 
+// ─── Overview Tab Component ───────────────────────────────────────────────────
+function OverviewTab({ allocData, profile, profileLabels, aporte, marketData, marketLoading, acoesWithPrice, fiisWithPrice, carteiraReal, calcCarteiraAtivo, runAI, today }) {
+
+  // Carteira resumo
+  let totalCusto = 0, totalAtual = 0, carteiraOk = false;
+  carteiraReal.forEach(ativo => {
+    const calc = calcCarteiraAtivo(ativo);
+    totalCusto += Number(ativo.qtd) * Number(ativo.precoMedio);
+    const live = marketData?.acoes?.find(m => m.ticker === ativo.ticker) || marketData?.fiis?.find(m => m.ticker === ativo.ticker);
+    if (live?.raw?.regularMarketPrice) { totalAtual += Number(ativo.qtd) * live.raw.regularMarketPrice; carteiraOk = true; }
+  });
+  const totalRes = totalAtual - totalCusto;
+  const totalPct = totalCusto > 0 ? (totalRes / totalCusto) * 100 : 0;
+
+  // Top movers from real data
+  const allAtivos = [...acoesWithPrice, ...fiisWithPrice].filter(a => a.variacao !== '--' && a.positivo !== null);
+  const topAlta  = [...allAtivos].filter(a => a.positivo).sort((a,b) => parseFloat(b.variacao) - parseFloat(a.variacao)).slice(0,3);
+  const topBaixa = [...allAtivos].filter(a => !a.positivo).sort((a,b) => parseFloat(a.variacao) - parseFloat(b.variacao)).slice(0,3);
+
+  return (
+    <div>
+      {/* Botao analise IA */}
+      <div style={{ background:'linear-gradient(135deg,#EFF6FF,#F0FDF4)', border:'1px solid #BFDBFE', borderRadius:14, padding:16, marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <p style={{ fontSize:13, fontWeight:700, color:'#1E40AF', marginBottom:3 }}>Analise IA do mercado</p>
+          <p style={{ fontSize:12, color:'#3B82F6' }}>Clique para gerar uma analise completa com dados em tempo real</p>
+        </div>
+        <button onClick={() => runAI('news')} style={{ padding:'10px 18px', borderRadius:9, border:'none', background:'#2563EB', color:'white', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+          Ver analise IA ↗
+        </button>
+      </div>
+
+      {/* Carteira resumo + Alocacao */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+        <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:14, padding:16 }}>
+          <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600, marginBottom:12 }}>Alocacao sugerida - {profileLabels[profile]}</p>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
+            {allocData.map(d => (
+              <span key={d.name} style={{ fontSize:11, color:'#64748B', display:'flex', alignItems:'center', gap:4 }}>
+                <span style={{ width:8, height:8, borderRadius:2, background:d.color, display:'inline-block' }} />{d.name} {d.value}%
+              </span>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
+            <PieChart><Pie data={allocData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} paddingAngle={2} dataKey="value">
+              {allocData.map((d,i) => <Cell key={i} fill={d.color} />)}
+            </Pie><Tooltip formatter={(v,n) => [`${v}%`,n]} /></PieChart>
+          </ResponsiveContainer>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginTop:8 }}>
+            {allocData.map(d => (
+              <div key={d.name} style={{ display:'flex', justifyContent:'space-between', background:'#F8FAFC', borderRadius:6, padding:'6px 10px' }}>
+                <span style={{ fontSize:11, color:'#64748B' }}>{d.name}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:'#0F172A' }}>R$ {Math.round(aporte*d.value/100).toLocaleString('pt-BR')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {/* Resumo carteira */}
+          <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:14, padding:16 }}>
+            <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600, marginBottom:12 }}>Minha carteira</p>
+            {carteiraReal.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'16px 0' }}>
+                <p style={{ fontSize:24, marginBottom:6 }}>📊</p>
+                <p style={{ fontSize:12, color:'#94A3B8' }}>Nenhum ativo cadastrado</p>
+                <button onClick={() => runAI('carteira')} style={{ marginTop:8, fontSize:12, padding:'6px 12px', borderRadius:7, border:'none', background:'#EFF6FF', color:'#2563EB', cursor:'pointer', fontWeight:600 }}>
+                  Ir para Carteira →
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
+                  <div style={{ background:'#F8FAFC', borderRadius:8, padding:'10px 12px' }}>
+                    <p style={{ fontSize:10, color:'#64748B', marginBottom:2 }}>Custo total</p>
+                    <p style={{ fontSize:15, fontWeight:700, color:'#0F172A' }}>R$ {totalCusto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                  </div>
+                  <div style={{ background: carteiraOk ? (totalRes >= 0 ? '#D1FAE5' : '#FEE2E2') : '#F8FAFC', borderRadius:8, padding:'10px 12px' }}>
+                    <p style={{ fontSize:10, color:'#64748B', marginBottom:2 }}>Resultado</p>
+                    <p style={{ fontSize:15, fontWeight:700, color: carteiraOk ? (totalRes >= 0 ? '#059669' : '#DC2626') : '#94A3B8' }}>
+                      {carteiraOk ? `${totalRes >= 0 ? '+' : ''}R$ ${totalRes.toLocaleString('pt-BR',{minimumFractionDigits:2})}` : 'Aguardando cotacao'}
+                    </p>
+                  </div>
+                </div>
+                {carteiraOk && (
+                  <div style={{ background: totalPct >= 0 ? '#D1FAE5' : '#FEE2E2', borderRadius:8, padding:'8px 12px', textAlign:'center' }}>
+                    <span style={{ fontSize:14, fontWeight:800, color: totalPct >= 0 ? '#059669' : '#DC2626' }}>
+                      {totalPct >= 0 ? '+' : ''}{totalPct.toFixed(2)}% no total
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Top movers */}
+          <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:14, padding:16, flex:1 }}>
+            <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600, marginBottom:10 }}>
+              Maiores movimentos hoje
+              {marketLoading && <span style={{ color:'#D97706', marginLeft:6 }}>carregando...</span>}
+            </p>
+            {topAlta.length === 0 && topBaixa.length === 0 ? (
+              <p style={{ fontSize:12, color:'#94A3B8' }}>Cotacoes sendo carregadas...</p>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                {topAlta.map(a => (
+                  <div key={a.ticker} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'5px 8px', background:'#F0FDF4', borderRadius:6 }}>
+                    <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:12, color:'#059669' }}>{a.ticker}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#059669' }}>{a.variacao}</span>
+                  </div>
+                ))}
+                {topBaixa.map(a => (
+                  <div key={a.ticker} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'5px 8px', background:'#FEF2F2', borderRadius:6 }}>
+                    <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:12, color:'#DC2626' }}>{a.ticker}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#DC2626' }}>{a.variacao}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Destaques com cotacoes reais */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600 }}>Ativos em destaque — cotacoes ao vivo</p>
+        <button onClick={() => runAI('rec')} style={{ fontSize:12, padding:'6px 14px', borderRadius:8, border:'1px solid #E2E8F0', background:'white', color:'#374151', cursor:'pointer' }}>Analise completa ↗</button>
+      </div>
+      {['PETR4','ITUB4','MXRF11','HGLG11','IVVB11','MGLU3'].map(ticker => {
+        const ativo = [...acoesWithPrice, ...fiisWithPrice].find(a => a.ticker === ticker);
+        const rec = ticker === 'MGLU3' ? 'sell' : ticker === 'IVVB11' ? 'buy' : ativo?.rec || 'hold';
+        const desc = {
+          PETR4: 'Petrobras - dividendos elevados, exposicao ao petroleo',
+          ITUB4: 'Itau Unibanco - banco lider com solida gestao de capital',
+          MXRF11: 'Maxi Renda FII - papel/CRI com proventos mensais',
+          HGLG11: 'CSHG Logistica FII - galpoes logisticos premium',
+          IVVB11: 'ETF S&P 500 em R$ - diversificacao internacional',
+          MGLU3: 'Magazine Luiza - alta volatilidade, aguardar recuperacao',
+        }[ticker] || '';
+        return (
+          <div key={ticker} style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:12, padding:'12px 16px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:3 }}>
+                <span style={{ fontFamily:'monospace', fontWeight:800, fontSize:14, color:'#0F172A' }}>{ticker}</span>
+                {ativo?.preco !== '--' && <span style={{ fontSize:14, fontWeight:700, color:'#0F172A' }}>R$ {ativo.preco}</span>}
+                {ativo?.variacao !== '--' && <span style={{ fontSize:13, fontWeight:700, color: ativo.positivo ? '#059669' : '#DC2626' }}>{ativo.variacao}</span>}
+                {(!ativo || ativo.preco === '--') && <span style={{ fontSize:11, color:'#94A3B8' }}>cotacao indisponivel</span>}
+              </div>
+              <p style={{ fontSize:12, color:'#64748B' }}>{desc}</p>
+            </div>
+            <div style={{ flexShrink:0 }}>
+              <span style={{ background: rec==='buy'?'#D1FAE5':rec==='sell'?'#FEE2E2':'#FEF3C7', color: rec==='buy'?'#065F46':rec==='sell'?'#991B1B':'#92400E', fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6 }}>
+                {rec==='buy'?'COMPRAR':rec==='sell'?'EVITAR':'AGUARDAR'}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [showSplash, setShowSplash]   = useState(true);
@@ -461,59 +623,20 @@ export default function Dashboard() {
 
         {/* VISAO GERAL */}
         {tab==='overview' && (
-          <div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
-              <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:14, padding:16 }}>
-                <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600, marginBottom:12 }}>Alocacao - {profileLabels[profile]}</p>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
-                  {allocData.map(d => (
-                    <span key={d.name} style={{ fontSize:11, color:'#64748B', display:'flex', alignItems:'center', gap:4 }}>
-                      <span style={{ width:8, height:8, borderRadius:2, background:d.color, display:'inline-block' }} />{d.name} {d.value}%
-                    </span>
-                  ))}
-                </div>
-                <ResponsiveContainer width="100%" height={170}>
-                  <PieChart><Pie data={allocData} cx="50%" cy="50%" innerRadius={50} outerRadius={78} paddingAngle={2} dataKey="value">
-                    {allocData.map((d,i) => <Cell key={i} fill={d.color} />)}
-                  </Pie><Tooltip formatter={(v,n) => [`${v}%`,n]} /></PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:14, padding:16 }}>
-                <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600, marginBottom:12 }}>Performance simulada - 12m</p>
-                <ResponsiveContainer width="100%" height={190}>
-                  <LineChart data={PERF_DATA} margin={{top:0,right:4,left:-20,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                    <XAxis dataKey="m" tick={{fontSize:10,fill:'#94A3B8'}} />
-                    <YAxis tick={{fontSize:10,fill:'#94A3B8'}} tickFormatter={v=>`${v}%`} />
-                    <Tooltip formatter={(v,n) => [`${v}%`, n==='p'?'Portfolio':'IBOV']} />
-                    <Line type="monotone" dataKey="p" stroke="#2563EB" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="i" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-              <p style={{ fontSize:11, color:'#64748B', textTransform:'uppercase', fontWeight:600 }}>Destaques do dia</p>
-              <button onClick={() => runAI('news')} style={{ fontSize:12, padding:'6px 14px', borderRadius:8, border:'1px solid #E2E8F0', background:'white', color:'#374151', cursor:'pointer' }}>Ver noticias ao vivo ↗</button>
-            </div>
-            {[
-              { t:'PETR4 - Petrobras PN',  rec:'buy',  d:'Dividendos ~13% DY, valuation descontado vs. pares globais.' },
-              { t:'MXRF11 - Maxi Renda',   rec:'buy',  d:'FII papel/CRI com DY elevado e proventos mensais consistentes.' },
-              { t:'Tesouro IPCA+ 2029',     rec:'buy',  d:'Taxa real + IPCA. Protecao contra inflacao com retorno atrativo.' },
-              { t:'IVVB11 - ETF S&P 500',   rec:'buy',  d:'Diversificacao internacional pela B3, protecao cambial.' },
-              { t:'MGLU3 - Mag. Luiza',     rec:'sell', d:'Alta volatilidade, divida elevada. Aguardar recuperacao.' },
-            ].map(r => (
-              <div key={r.t} style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:12, padding:'14px 18px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
-                <div>
-                  <p style={{ fontWeight:700, fontSize:14, color:'#0F172A', marginBottom:4 }}>{r.t}</p>
-                  <p style={{ fontSize:12, color:'#64748B', lineHeight:1.5 }}>{r.d}</p>
-                </div>
-                <div style={{ flexShrink:0 }}><Badge rec={r.rec} /></div>
-              </div>
-            ))}
-            <p style={{ fontSize:11, color:'#94A3B8', marginTop:12 }}>* Use a aba Analise IA para dados e recomendacoes em tempo real.</p>
-          </div>
+          <OverviewTab
+            allocData={allocData}
+            profile={profile}
+            profileLabels={profileLabels}
+            aporte={aporte}
+            marketData={marketData}
+            marketLoading={marketLoading}
+            acoesWithPrice={acoesWithPrice}
+            fiisWithPrice={fiisWithPrice}
+            carteiraReal={carteiraReal}
+            calcCarteiraAtivo={calcCarteiraAtivo}
+            runAI={runAI}
+            today={today}
+          />
         )}
 
         {/* CARTEIRA */}
