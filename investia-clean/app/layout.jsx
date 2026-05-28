@@ -1,4 +1,7 @@
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], weight: ['400','500','600','700','800'] });
 
 export const metadata = {
   title: 'InvestIA Dashboard',
@@ -16,7 +19,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-title" content="InvestIA" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body style={{ margin:0, padding:0 }}>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
