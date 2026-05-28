@@ -290,7 +290,15 @@ export default function Dashboard() {
   const [now, setNow]                 = useState('');
   const [marketData, setMarketData]   = useState(null);
   const [marketLoading, setMarketLoading] = useState(true);
-  const [carteiraReal, setCarteiraReal] = useState([]);
+  const CARTEIRA_INICIAL = [
+    { ticker:'PETR4',  qtd:'100', precoMedio:'38.50' },
+    { ticker:'ITUB4',  qtd:'100', precoMedio:'35.20' },
+    { ticker:'BBAS3',  qtd:'100', precoMedio:'28.90' },
+    { ticker:'MXRF11', qtd:'200', precoMedio:'10.85' },
+    { ticker:'HGLG11', qtd:'50',  precoMedio:'162.00' },
+    { ticker:'IVVB11', qtd:'30',  precoMedio:'285.00' },
+  ];
+  const [carteiraReal, setCarteiraReal] = useState(CARTEIRA_INICIAL);
   const [novoAtivo, setNovoAtivo]     = useState({ ticker:'', qtd:'', precoMedio:'' });
   const pdfRef = useRef(null);
 
@@ -322,7 +330,10 @@ export default function Dashboard() {
       setAporte(p.aporte || 5000);
     }
     const savedCarteira = localStorage.getItem('investia_carteira');
-    if (savedCarteira) setCarteiraReal(JSON.parse(savedCarteira));
+    if (savedCarteira) {
+      const parsed = JSON.parse(savedCarteira);
+      if (Array.isArray(parsed) && parsed.length > 0) setCarteiraReal(parsed);
+    }
 
     const tick = () => setNow(new Date().toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }));
     tick();
