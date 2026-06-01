@@ -1,4 +1,4 @@
-name: Relatório Diário InvestIA
+name: Relatorio Diario InvestIA
 
 on:
   schedule:
@@ -9,7 +9,7 @@ jobs:
   send-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Disparar relatório diário
+      - name: Disparar relatorio diario
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
