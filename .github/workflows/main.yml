@@ -13,4 +13,5 @@ jobs:
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "x-vercel-protection-bypass: SEU_BYPASS_TOKEN_AQUI" \
             https://investia-dashboard-o33m4zjos-casanovafurtado-9156s-projects.vercel.app/api/daily-report
