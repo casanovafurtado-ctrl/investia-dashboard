@@ -13,4 +13,4 @@ jobs:
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://investia-dashboard.vercel.app/api/daily-report
+            https://investia-dashboard-o33m4zjos-casanovafurtado-9156s-projects.vercel.app/api/daily-report
